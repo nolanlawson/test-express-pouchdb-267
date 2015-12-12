@@ -1,0 +1,19 @@
+{
+  "name": "test-express-pouchdb-267",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "rimraf _replicator/ _users/ foo/ log.txt pouch__all_dbs__/ && node index.js"
+  },
+  "keywords": [],
+  "author": "Nolan Lawson <nolan@nolanlawson.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "express": "^4.13.3",
+    "express-pouchdb": "^1.0.1",
+    "lie": "^3.0.1",
+    "pouchdb": "^5.1.0",
+    "rimraf": "^2.4.4"
+  }
+}
