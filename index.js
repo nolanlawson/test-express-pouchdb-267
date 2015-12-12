@@ -3,13 +3,12 @@
 var PouchDB = require("pouchdb");
 var Promise = require('lie');
 var express = require('express');
-var expressPouch = require('express-pouchdb');
 
 function startExpress(port) {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function(resolve, reject) {
     var app = express();
-    app.use('/', expressPouch(PouchDB));
-    app.listen(port, function (err) {
+    app.use('/', require('express-pouchdb')(PouchDB));
+    app.listen(port, function(err) {
       if (err) {
         reject(err);
         return;
@@ -26,8 +25,8 @@ function writeManyTimesFast(db, docsObj) {
   var counter = 0;
   for (var i = 0; i < generatedDocsPerRun; ++i) {
     promisesArray.push(
-      new Promise(function (resolve, reject) {
-        setTimeout(function () {
+      new Promise(function(resolve, reject) {
+        setTimeout(function() {
           ++counter;
           var doc = {_id: db._db_name + counter};
           if (docsObj[doc._id]) {
@@ -35,10 +34,10 @@ function writeManyTimesFast(db, docsObj) {
           }
           docsObj[doc._id] = true;
           db.put(doc) // This stupid ID is just to prove that the ID is unique
-            .then(function () {
+            .then(function() {
               resolve();
-            }).catch(function () {
-              reject();
+            }).catch(function() {
+              reject(new Error('error from write many times fast'));
             });
         }, 1);
       })
@@ -49,9 +48,9 @@ function writeManyTimesFast(db, docsObj) {
 
 function matchDocs(localDocs, localName, allDocsResult, resultName) {
   var rows = allDocsResult.rows;
-  Object.getOwnPropertyNames(localDocs).forEach(function (localDoc) {
+  Object.getOwnPropertyNames(localDocs).forEach(function(localDoc) {
     var found = false;
-    rows.forEach(function (resultDoc) {
+    rows.forEach(function(resultDoc) {
       if (resultDoc.id == localDoc) {
         found = true;
       }
@@ -62,8 +61,11 @@ function matchDocs(localDocs, localName, allDocsResult, resultName) {
   });
 }
 
-var db1Name = 'foo';//"http://127.0.0.1:5984/foo";
-var db2Name = 'foo';
+var db1port = 5984;
+var db2port = 5985;
+var db1Name = "http://127.0.0.1:" + db1port + "/foo";
+var db2Name = "http://127.0.0.1:" + db2port + "/foo";
+db2Name = "foo";
 var db1 = new PouchDB(db1Name);
 var db2 = new PouchDB(db2Name);
 var db1Docs = {};
@@ -78,16 +80,16 @@ startExpress(5984)
   //.then(function() {
   //    return startExpress(5985);
   //})
-  .then(function () {
+  .then(function() {
     return db1.destroy();
-  }).then(function () {
+  }).then(function() {
     db1 = new PouchDB(db1Name);
     db2 = new PouchDB(db2Name);
     var promisesArray = [];
     promisesArray.push(writeManyTimesFast(db1, db1Docs));
     promisesArray.push(writeManyTimesFast(db2, db2Docs));
     return Promise.all(promisesArray);
-  }).then(function () {
+  }).then(function() {
     if (Object.getOwnPropertyNames(db1Docs).length != generatedDocsPerRun) {
       console.log("db1Docs length is wrong.");
     }
@@ -95,17 +97,17 @@ startExpress(5984)
       console.log("db2Docs length is wrong");
     }
     // Spurious delay just in case things take a while to settle on disk
-    return new Promise(function (resolve, reject) {
-      setTimeout(function () {
+    return new Promise(function(resolve, reject) {
+      setTimeout(function() {
         resolve();
       }, 1000);
     });
-  }).then(function () {
+  }).then(function() {
     return db1.allDocs();
-  }).then(function (db1AllDocsResult) {
+  }).then(function(db1AllDocsResult) {
     db1AllDocs = db1AllDocsResult;
     return db2.allDocs();
-  }).then(function (db2AllDocsResult) {
+  }).then(function(db2AllDocsResult) {
     db2AllDocs = db2AllDocsResult;
     console.log("db1 All Docs count = " + db1AllDocs.total_rows);
     console.log("db2 All Docs count = " + db2AllDocs.total_rows);
@@ -132,16 +134,15 @@ startExpress(5984)
     matchDocs(db2Docs, "db2", db2AllDocs, "db2");
 
     return db1.info();
-  }).then(function (db1InfoResult) {
+  }).then(function(db1InfoResult) {
     db1Info = db1InfoResult;
     return db2.info();
-  }).then(function (db2InfoResult) {
+  }).then(function(db2InfoResult) {
     db2Info = db2InfoResult;
     console.log("db1 info count = " + db1Info.doc_count);
     console.log("db2 info count = " + db2Info.doc_count);
     console.log("db1 update_seq = " + db1Info.update_seq);
     console.log("db2 update_seq = " + db2Info.update_seq);
-  }).catch(function (err) {
+  }).catch(function(err) {
     console.log("we failed with " + err);
   });
-
